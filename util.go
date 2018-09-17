@@ -1,4 +1,4 @@
-package kubegen
+package kg
 
 import (
 	"k8s.io/apimachinery/pkg/util/intstr"

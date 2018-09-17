@@ -1,4 +1,4 @@
-package kubegen
+package kg
 
 import (
 	"strconv"

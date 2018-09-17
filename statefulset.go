@@ -1,4 +1,4 @@
-package kubegen
+package kg
 
 import (
 	kubeext "k8s.io/api/apps/v1"

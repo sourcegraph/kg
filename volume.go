@@ -1,4 +1,4 @@
-package kubegen
+package kg
 
 import (
 	kube "k8s.io/api/core/v1"
