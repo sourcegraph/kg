@@ -84,7 +84,9 @@ func (c *Cluster) Write() error {
 			return err
 		}
 
-		ioutil.WriteFile(file, sanitized, 0666)
+		if err := ioutil.WriteFile(file, sanitized, 0666); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -204,7 +206,9 @@ func (c *Cluster) Secrets(createIfNotExists bool, names ...string) (selected []*
 			if _, exists := c.files[newFile]; exists {
 				log.Fatalf("new file %s would conflict with existing file", newFile)
 			}
-			c.files[newFile] = Secret(name)
+			newSecret := Secret(name)
+			c.files[newFile] = newSecret
+			selected = append(selected, newSecret)
 		}
 	}
 	return selected

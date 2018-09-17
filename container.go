@@ -107,14 +107,24 @@ func ContainerPort(name string, port int32) ContainerOpt {
 
 func VolumeMount(name string, mountPath string, opts ...VolumeMountOpt) ContainerOpt {
 	return func(pod *kube.PodSpec, container *kube.Container) {
-		mount := kube.VolumeMount{
-			Name:      name,
-			MountPath: mountPath,
+		var mount *kube.VolumeMount
+		for i := range container.VolumeMounts {
+			if container.VolumeMounts[i].Name == name {
+				mount = &container.VolumeMounts[i]
+				break
+			}
 		}
+		if mount == nil {
+			container.VolumeMounts = append(container.VolumeMounts, kube.VolumeMount{
+				Name:      name,
+				MountPath: mountPath,
+			})
+			mount = &container.VolumeMounts[len(container.VolumeMounts)-1]
+		}
+
 		for _, opt := range opts {
-			opt(&mount)
+			opt(mount)
 		}
-		container.VolumeMounts = append(container.VolumeMounts, mount)
 	}
 }
 

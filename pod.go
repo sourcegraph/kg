@@ -63,10 +63,20 @@ func Container(name string, opts ...ContainerOpt) PodSpecOpt {
 
 func Volume(name string, source kube.VolumeSource) PodSpecOpt {
 	return func(pod *kube.PodSpec) {
-		pod.Volumes = append(pod.Volumes, kube.Volume{
-			Name:         name,
-			VolumeSource: source,
-		})
+		found := false
+		for i := range pod.Volumes {
+			if pod.Volumes[i].Name == name {
+				pod.Volumes[i].VolumeSource = source
+				found = true
+			}
+		}
+
+		if !found {
+			pod.Volumes = append(pod.Volumes, kube.Volume{
+				Name:         name,
+				VolumeSource: source,
+			})
+		}
 	}
 }
 

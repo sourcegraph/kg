@@ -9,6 +9,10 @@ type SecretOpt func(s *kube.Secret)
 
 func Secret(name string) *kube.Secret {
 	return &kube.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -17,7 +21,7 @@ func Secret(name string) *kube.Secret {
 
 func SecretData(d map[string]string) SecretOpt {
 	return func(s *kube.Secret) {
-		if s.StringData != nil {
+		if s.StringData == nil {
 			s.StringData = map[string]string{}
 		}
 		for k, v := range d {
@@ -32,8 +36,13 @@ func SecretType(t kube.SecretType) SecretOpt {
 	}
 }
 
-func SecretMeta(meta metav1.ObjectMeta) SecretOpt {
+func SecretMetaLabels(labels map[string]string) SecretOpt {
 	return func(s *kube.Secret) {
-		s.ObjectMeta = meta
+		if s.ObjectMeta.Labels == nil {
+			s.ObjectMeta.Labels = map[string]string{}
+		}
+		for k, v := range labels {
+			s.ObjectMeta.Labels[k] = v
+		}
 	}
 }
