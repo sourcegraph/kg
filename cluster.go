@@ -2,7 +2,9 @@ package kg
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -14,7 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func ModifyCluster(rootDir string, apply func(*Cluster)) error {
+func ModifyCluster(rootDir, newFilesDir string, apply func(*Cluster)) error {
 	var yamlFiles []string
 	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
@@ -27,7 +29,7 @@ func ModifyCluster(rootDir string, apply func(*Cluster)) error {
 		return nil
 	})
 
-	c, err := NewCluster(yamlFiles)
+	c, err := NewCluster(yamlFiles, newFilesDir)
 	if err != nil {
 		return err
 	}
@@ -37,8 +39,8 @@ func ModifyCluster(rootDir string, apply func(*Cluster)) error {
 	return c.Write()
 }
 
-func NewCluster(files []string) (*Cluster, error) {
-	c := &Cluster{files: make(map[string]runtime.Object)}
+func NewCluster(files []string, newFilesDir string) (*Cluster, error) {
+	c := &Cluster{files: make(map[string]runtime.Object), newFilesDir: newFilesDir}
 	for _, file := range files {
 		b, err := ioutil.ReadFile(file)
 		if err != nil {
@@ -58,6 +60,9 @@ func NewCluster(files []string) (*Cluster, error) {
 
 type Cluster struct {
 	files map[string]runtime.Object
+
+	// newFilesDir is the directory to which to add new files created by modifications
+	newFilesDir string
 }
 
 func (c *Cluster) Write() error {
@@ -169,6 +174,42 @@ func (c *Cluster) PVC(names ...string) (selected []*kube.PersistentVolumeClaim) 
 	return selected
 }
 
+func (c *Cluster) Secrets(createIfNotExists bool, names ...string) (selected []*kube.Secret) {
+	selectAll := false
+	nameSet := make(map[string]bool)
+	for _, name := range names {
+		if name == "*" {
+			selectAll = true
+		} else {
+			nameSet[name] = false
+		}
+	}
+	for _, obj := range c.files {
+		if secret, ok := obj.(*kube.Secret); ok {
+			_, exists := nameSet[secret.ObjectMeta.Name]
+			if exists {
+				nameSet[secret.ObjectMeta.Name] = true
+				if selectAll {
+					selected = append(selected, secret)
+				}
+			}
+		}
+	}
+	if createIfNotExists {
+		for name, found := range nameSet {
+			if found {
+				continue
+			}
+			newFile := filepath.Join(c.newFilesDir, fmt.Sprintf("%s.Secret.yaml", name))
+			if _, exists := c.files[newFile]; exists {
+				log.Fatalf("new file %s would conflict with existing file", newFile)
+			}
+			c.files[newFile] = Secret(name)
+		}
+	}
+	return selected
+}
+
 func (c *Cluster) ModifyPVC(names []string, opts ...PersistentVolumeClaimOpt) {
 	for _, pvc := range c.PVC(names...) {
 		for _, opt := range opts {
@@ -189,6 +230,14 @@ func (c *Cluster) ModifyStatefulSets(names []string, opts ...StatefulSetOpt) {
 	for _, sset := range c.StatefulSets(names...) {
 		for _, opt := range opts {
 			opt(sset)
+		}
+	}
+}
+
+func (c *Cluster) ModifySecrets(names []string, opts ...SecretOpt) {
+	for _, s := range c.Secrets(true, names...) {
+		for _, opt := range opts {
+			opt(s)
 		}
 	}
 }
