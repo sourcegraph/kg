@@ -1,6 +1,9 @@
 package kg
 
 import (
+	"io/ioutil"
+	"log"
+
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -22,4 +25,12 @@ func BoolPtr(v bool) *bool {
 
 func IntstrPtr(v intstr.IntOrString) *intstr.IntOrString {
 	return &v
+}
+
+func ReadFile(filename string) string {
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Fatalf("Could not read file %s: %v", filename, err)
+	}
+	return string(b)
 }

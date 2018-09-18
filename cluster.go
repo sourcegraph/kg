@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func ApplyClusterChanges(rootDir, newFilesDir string, apply func(*Cluster)) error {
+func ModifyCluster(rootDir, newFilesDir string, apply func(*Cluster)) error {
 	var yamlFiles []string
 	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
@@ -166,7 +166,7 @@ func (c *Cluster) PersistentVolumeClaims(names ...string) (selected PersistentVo
 	return selected
 }
 
-func (c *Cluster) Secrets(names ...string) (selected []*kube.Secret) {
+func (c *Cluster) Secrets(names ...string) (selected Secrets) {
 	selectAll := false
 	nameSet := make(map[string]bool)
 	for _, name := range names {
