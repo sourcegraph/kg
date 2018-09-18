@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func ModifyCluster(rootDir, newFilesDir string, apply func(*Cluster)) error {
+func ApplyClusterChanges(rootDir, newFilesDir string, apply func(*Cluster)) error {
 	var yamlFiles []string
 	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
@@ -59,6 +59,8 @@ func NewCluster(files []string, newFilesDir string) (*Cluster, error) {
 }
 
 type Cluster struct {
+	// files is a map from filename, relative to the cluster root directory, to the Kubernetes
+	// object deserialized from that file
 	files map[string]runtime.Object
 
 	// newFilesDir is the directory to which to add new files created by modifications
@@ -91,18 +93,7 @@ func (c *Cluster) Write() error {
 	return nil
 }
 
-func (c *Cluster) Deployment(name string) *v1.Deployment {
-	for _, obj := range c.files {
-		if deploy, ok := obj.(*v1.Deployment); ok {
-			if deploy.ObjectMeta.Name == name {
-				return deploy
-			}
-		}
-	}
-	return nil
-}
-
-func (c *Cluster) Deployments(names ...string) (selected []*v1.Deployment) {
+func (c *Cluster) Deployments(names ...string) (selected Deployments) {
 	selectAll := false
 	nameSet := make(map[string]struct{})
 	for _, name := range names {
@@ -123,7 +114,7 @@ func (c *Cluster) Deployments(names ...string) (selected []*v1.Deployment) {
 	return selected
 }
 
-func (c *Cluster) StatefulSets(names ...string) (selected []*v1.StatefulSet) {
+func (c *Cluster) StatefulSets(names ...string) (selected StatefulSets) {
 	selectAll := false
 	nameSet := make(map[string]struct{})
 	for _, name := range names {
@@ -144,18 +135,7 @@ func (c *Cluster) StatefulSets(names ...string) (selected []*v1.StatefulSet) {
 	return selected
 }
 
-func (c *Cluster) StatefulSet(name string) *v1.StatefulSet {
-	for _, obj := range c.files {
-		if sset, ok := obj.(*v1.StatefulSet); ok {
-			if sset.ObjectMeta.Name == name {
-				return sset
-			}
-		}
-	}
-	return nil
-}
-
-func (c *Cluster) PVC(names ...string) (selected []*kube.PersistentVolumeClaim) {
+func (c *Cluster) PersistentVolumeClaims(names ...string) (selected PersistentVolumeClaims) {
 	selectAll := false
 	nameSet := make(map[string]struct{})
 	for _, name := range names {
@@ -176,7 +156,7 @@ func (c *Cluster) PVC(names ...string) (selected []*kube.PersistentVolumeClaim) 
 	return selected
 }
 
-func (c *Cluster) Secrets(createIfNotExists bool, names ...string) (selected []*kube.Secret) {
+func (c *Cluster) Secrets(names ...string) (selected []*kube.Secret) {
 	selectAll := false
 	nameSet := make(map[string]bool)
 	for _, name := range names {
@@ -197,53 +177,21 @@ func (c *Cluster) Secrets(createIfNotExists bool, names ...string) (selected []*
 			}
 		}
 	}
-	if createIfNotExists {
-		for name, found := range nameSet {
-			if found {
-				continue
-			}
-			newFile := filepath.Join(c.newFilesDir, fmt.Sprintf("%s.Secret.yaml", name))
-			if _, exists := c.files[newFile]; exists {
-				log.Fatalf("new file %s would conflict with existing file", newFile)
-			}
-			newSecret := Secret(name)
-			c.files[newFile] = newSecret
-			selected = append(selected, newSecret)
+
+	// Create non-existent secrets
+	for name, found := range nameSet {
+		if found {
+			continue
 		}
+		newFile := filepath.Join(c.newFilesDir, fmt.Sprintf("%s.Secret.yaml", name))
+		if _, exists := c.files[newFile]; exists {
+			log.Fatalf("new file %s would conflict with existing file", newFile)
+		}
+		newSecret := Secret(name)
+		c.files[newFile] = newSecret
+		selected = append(selected, newSecret)
 	}
 	return selected
-}
-
-func (c *Cluster) ModifyPVC(names []string, opts ...PersistentVolumeClaimOpt) {
-	for _, pvc := range c.PVC(names...) {
-		for _, opt := range opts {
-			opt(pvc)
-		}
-	}
-}
-
-func (c *Cluster) ModifyDeployments(names []string, opts ...DeploymentOpt) {
-	for _, deploy := range c.Deployments(names...) {
-		for _, opt := range opts {
-			opt(deploy)
-		}
-	}
-}
-
-func (c *Cluster) ModifyStatefulSets(names []string, opts ...StatefulSetOpt) {
-	for _, sset := range c.StatefulSets(names...) {
-		for _, opt := range opts {
-			opt(sset)
-		}
-	}
-}
-
-func (c *Cluster) ModifySecrets(names []string, opts ...SecretOpt) {
-	for _, s := range c.Secrets(true, names...) {
-		for _, opt := range opts {
-			opt(s)
-		}
-	}
 }
 
 // sanitize removes fields that shouldn't be present in the persisted YAML files but are emitted by
