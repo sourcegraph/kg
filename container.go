@@ -105,7 +105,7 @@ func ContainerPort(name string, port int32) ContainerOp {
 	}
 }
 
-func VolumeMount(name string, mountPath string, opts ...VolumeMountOp) ContainerOp {
+func VolumeMount(name string, mountPath string, ops ...VolumeMountOp) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		var mount *kube.VolumeMount
 		for i := range container.VolumeMounts {
@@ -122,8 +122,8 @@ func VolumeMount(name string, mountPath string, opts ...VolumeMountOp) Container
 			mount = &container.VolumeMounts[len(container.VolumeMounts)-1]
 		}
 
-		for _, opt := range opts {
-			opt(mount)
+		for _, op := range ops {
+			op(mount)
 		}
 	}
 }

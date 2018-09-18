@@ -2,10 +2,10 @@ package kg
 
 import kube "k8s.io/api/core/v1"
 
-func PodSpec(opts ...PodSpecOp) *kube.PodSpec {
+func PodSpec(ops ...PodSpecOp) *kube.PodSpec {
 	pod := &kube.PodSpec{}
-	for _, opt := range opts {
-		opt(pod)
+	for _, op := range ops {
+		op(pod)
 	}
 	return pod
 }
@@ -31,7 +31,7 @@ func NodeSelector(nodeSelector map[string]string) PodSpecOp {
 	}
 }
 
-func Container(name string, opts ...ContainerOp) PodSpecOp {
+func Container(name string, ops ...ContainerOp) PodSpecOp {
 	return func(pod *kube.PodSpec) {
 		var containers []*kube.Container
 		if name == "" {
@@ -54,8 +54,8 @@ func Container(name string, opts ...ContainerOp) PodSpecOp {
 		}
 
 		for _, container := range containers {
-			for _, opt := range opts {
-				opt(pod, container)
+			for _, op := range ops {
+				op(pod, container)
 			}
 		}
 	}

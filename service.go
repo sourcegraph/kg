@@ -8,11 +8,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func Service(name string, opts ...ServiceOp) *kube.Service {
-	return ServiceForApp(name, name, opts...)
+func Service(name string, ops ...ServiceOp) *kube.Service {
+	return ServiceForApp(name, name, ops...)
 }
 
-func ServiceForApp(name string, app string, opts ...ServiceOp) *kube.Service {
+func ServiceForApp(name string, app string, ops ...ServiceOp) *kube.Service {
 	svc := &kube.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -29,8 +29,8 @@ func ServiceForApp(name string, app string, opts ...ServiceOp) *kube.Service {
 		},
 	}
 
-	for _, opt := range opts {
-		opt(svc)
+	for _, op := range ops {
+		op(svc)
 	}
 
 	return svc

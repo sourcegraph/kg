@@ -12,7 +12,7 @@ import (
 // volumes (ie stateless), the rollout strategy will prevent
 // downtime. Otherwise minimal downtime will occur during rollout to allow k8s
 // to remount the volume on the new node.
-func Deployment(name string, description string, podSpec *kube.PodSpec, opts ...DeploymentOp) *kubeext.Deployment {
+func Deployment(name string, description string, podSpec *kube.PodSpec, ops ...DeploymentOp) *kubeext.Deployment {
 	maxUnavailable := 1
 	hasRealVolume := false
 	for _, vol := range podSpec.Volumes {
@@ -56,8 +56,8 @@ func Deployment(name string, description string, podSpec *kube.PodSpec, opts ...
 		},
 	}
 
-	for _, opt := range opts {
-		opt(depl)
+	for _, op := range ops {
+		op(depl)
 	}
 
 	return depl

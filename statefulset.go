@@ -14,8 +14,8 @@ func StatefulSetReplicas(count int32) StatefulSetOp {
 
 func StatefulSetPod(podOps ...PodSpecOp) StatefulSetOp {
 	return func(sset *kubeext.StatefulSet) {
-		for _, opt := range podOps {
-			opt(&sset.Spec.Template.Spec)
+		for _, op := range podOps {
+			op(&sset.Spec.Template.Spec)
 		}
 	}
 }
