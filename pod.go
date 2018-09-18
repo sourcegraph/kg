@@ -14,9 +14,7 @@ type PodSpecOp func(pod *kube.PodSpec)
 
 func SecurityContext(podSecurityContext *kube.PodSecurityContext) PodSpecOp {
 	return func(pod *kube.PodSpec) {
-		if podSecurityContext != nil {
-			pod.SecurityContext = podSecurityContext
-		}
+		pod.SecurityContext = podSecurityContext
 	}
 }
 

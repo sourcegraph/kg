@@ -40,38 +40,6 @@ func Env(vars map[string]string, addIfNotExist bool) ContainerOp {
 	}
 }
 
-func EnvAllowEmpty(vars map[string]string) ContainerOp {
-	return func(pod *kube.PodSpec, container *kube.Container) {
-		for name, value := range vars {
-			container.Env = append(container.Env, kube.EnvVar{Name: name, Value: value})
-		}
-		sort.Sort(byName(container.Env))
-	}
-}
-
-func EnvVarFrom(name string, source *kube.EnvVarSource) ContainerOp {
-	return func(pod *kube.PodSpec, container *kube.Container) {
-		container.Env = append(container.Env, kube.EnvVar{Name: name, ValueFrom: source})
-		sort.Sort(byName(container.Env))
-	}
-}
-
-func EnvVarFromSecret(varName string, secretName string, secretKey string, optional bool) ContainerOp {
-	return EnvVarFrom(varName, &kube.EnvVarSource{
-		SecretKeyRef: &kube.SecretKeySelector{
-			LocalObjectReference: kube.LocalObjectReference{Name: secretName},
-			Key:                  secretKey,
-			Optional:             BoolPtr(optional),
-		},
-	})
-}
-
-func EnvVarFromFieldSelector(name string, fieldPath string) ContainerOp {
-	return EnvVarFrom(name, &kube.EnvVarSource{
-		FieldRef: &kube.ObjectFieldSelector{FieldPath: fieldPath},
-	})
-}
-
 type byName []kube.EnvVar
 
 func (a byName) Len() int           { return len(a) }
@@ -93,15 +61,6 @@ func ResourceLimits(cpu, memory string) ContainerOp {
 			kube.ResourceCPU:    resource.MustParse(cpu),
 			kube.ResourceMemory: resource.MustParse(memory),
 		}
-	}
-}
-
-func ContainerPort(name string, port int32) ContainerOp {
-	return func(pod *kube.PodSpec, container *kube.Container) {
-		container.Ports = append(container.Ports, kube.ContainerPort{
-			Name:          name,
-			ContainerPort: port,
-		})
 	}
 }
 
@@ -128,14 +87,6 @@ func VolumeMount(name string, mountPath string, ops ...VolumeMountOp) ContainerO
 	}
 }
 
-type VolumeMountOp func(mount *kube.VolumeMount)
-
-func ReadOnly() VolumeMountOp {
-	return func(mount *kube.VolumeMount) {
-		mount.ReadOnly = true
-	}
-}
-
 func ReadinessProbe(p *kube.Probe) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.ReadinessProbe = p
@@ -145,5 +96,13 @@ func ReadinessProbe(p *kube.Probe) ContainerOp {
 func LivenessProbe(p *kube.Probe) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.LivenessProbe = p
+	}
+}
+
+type VolumeMountOp func(mount *kube.VolumeMount)
+
+func ReadOnly() VolumeMountOp {
+	return func(mount *kube.VolumeMount) {
+		mount.ReadOnly = true
 	}
 }
