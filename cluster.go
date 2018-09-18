@@ -26,6 +26,9 @@ func ModifyCluster(rootDir, newFilesDir string, apply func(*Cluster)) error {
 		if ext := filepath.Ext(path); ext != ".yaml" {
 			return nil
 		}
+		if strings.Count(path, ".") < 2 { // Kubernetes configuration files must be of the form ${name}.${type}.yaml
+			return nil
+		}
 		yamlFiles = append(yamlFiles, path)
 		return nil
 	})
@@ -160,6 +163,27 @@ func (c *Cluster) PersistentVolumeClaims(names ...string) (selected PersistentVo
 			_, exists := nameSet[pvc.ObjectMeta.Name]
 			if selectAll || exists {
 				selected = append(selected, pvc)
+			}
+		}
+	}
+	return selected
+}
+
+func (c *Cluster) ConfigMaps(names ...string) (selected ConfigMaps) {
+	selectAll := false
+	nameSet := make(map[string]struct{})
+	for _, name := range names {
+		if name == "*" {
+			selectAll = true
+		} else {
+			nameSet[name] = struct{}{}
+		}
+	}
+	for _, obj := range c.files {
+		if cm, ok := obj.(*kube.ConfigMap); ok {
+			_, exists := nameSet[cm.ObjectMeta.Name]
+			if selectAll || exists {
+				selected = append(selected, cm)
 			}
 		}
 	}

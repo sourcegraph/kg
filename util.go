@@ -1,6 +1,8 @@
 package kg
 
 import (
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -76,4 +78,51 @@ func mergeReflect(into reflect.Value, from reflect.Value) {
 		// Map-to-map merge, so recurse
 		mergeReflect(intoV, fromV)
 	}
+}
+
+// JSON marshals JSON using json.Marshal, but can hand internal objects of type
+// map[interface{}]interface{}. Panics if an error occurs.
+func JSON(m map[string]interface{}) string {
+	normalize(m)
+	s, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		log.Fatalf("Error marshaling JSON: %v", err)
+	}
+	return string(s)
+}
+
+// normalize converts all map[interface{}]interface{} to map[string]interface{}. Its parameter can
+// be of any type *except* map[interface{}]interface{}. It mutates m.
+func normalize(m interface{}) interface{} {
+	switch m := m.(type) {
+	case map[string]interface{}:
+		for k, v := range m {
+			switch v := v.(type) {
+			case map[interface{}]interface{}:
+				m[k] = normalize(convertMap(v))
+			default:
+				m[k] = normalize(v)
+			}
+		}
+	case []interface{}:
+		for i, v := range m {
+			switch v := v.(type) {
+			case map[interface{}]interface{}:
+				m[i] = normalize(convertMap(v))
+			default:
+				m[i] = normalize(v)
+			}
+		}
+	case map[interface{}]interface{}:
+		log.Fatal("unreachable")
+	}
+	return m
+}
+
+func convertMap(m map[interface{}]interface{}) map[string]interface{} {
+	m2 := make(map[string]interface{})
+	for k, v := range m {
+		m2[fmt.Sprintf("%s", k)] = v
+	}
+	return m2
 }

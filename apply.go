@@ -44,3 +44,13 @@ func (s Secrets) Apply(ops ...SecretOp) {
 		}
 	}
 }
+
+type ConfigMaps []*core.ConfigMap
+
+func (s ConfigMaps) Apply(ops ...ConfigMapOp) {
+	for _, c := range s {
+		for _, op := range ops {
+			op(c)
+		}
+	}
+}
