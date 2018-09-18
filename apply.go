@@ -7,7 +7,7 @@ import (
 
 type Deployments []*apps.Deployment
 
-func (s Deployments) Apply(ops ...DeploymentOpt) {
+func (s Deployments) Apply(ops ...DeploymentOp) {
 	for _, c := range s {
 		for _, op := range ops {
 			op(c)
@@ -17,7 +17,7 @@ func (s Deployments) Apply(ops ...DeploymentOpt) {
 
 type PersistentVolumeClaims []*core.PersistentVolumeClaim
 
-func (s PersistentVolumeClaims) Apply(ops ...PersistentVolumeClaimOpt) {
+func (s PersistentVolumeClaims) Apply(ops ...PersistentVolumeClaimOp) {
 	for _, c := range s {
 		for _, op := range ops {
 			op(c)
@@ -27,7 +27,7 @@ func (s PersistentVolumeClaims) Apply(ops ...PersistentVolumeClaimOpt) {
 
 type StatefulSets []*apps.StatefulSet
 
-func (s StatefulSets) Apply(ops ...StatefulSetOpt) {
+func (s StatefulSets) Apply(ops ...StatefulSetOp) {
 	for _, c := range s {
 		for _, op := range ops {
 			op(c)
@@ -37,7 +37,7 @@ func (s StatefulSets) Apply(ops ...StatefulSetOpt) {
 
 type Secrets []*core.Secret
 
-func (s Secrets) Apply(ops ...SecretOpt) {
+func (s Secrets) Apply(ops ...SecretOp) {
 	for _, c := range s {
 		for _, op := range ops {
 			op(c)

@@ -5,9 +5,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-type PersistentVolumeClaimOpt func(pvc *kube.PersistentVolumeClaim)
+type PersistentVolumeClaimOp func(pvc *kube.PersistentVolumeClaim)
 
-func DiskSize(size string) PersistentVolumeClaimOpt {
+func DiskSize(size string) PersistentVolumeClaimOp {
 	return func(pvc *kube.PersistentVolumeClaim) {
 		pvc.Spec.Resources.Requests[kube.ResourceStorage] = resource.MustParse(size)
 	}

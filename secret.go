@@ -5,7 +5,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type SecretOpt func(s *kube.Secret)
+type SecretOp func(s *kube.Secret)
 
 func Secret(name string) *kube.Secret {
 	return &kube.Secret{
@@ -19,7 +19,7 @@ func Secret(name string) *kube.Secret {
 	}
 }
 
-func SecretData(d map[string]string) SecretOpt {
+func SecretData(d map[string]string) SecretOp {
 	return func(s *kube.Secret) {
 		if s.StringData == nil {
 			s.StringData = map[string]string{}
@@ -30,13 +30,13 @@ func SecretData(d map[string]string) SecretOpt {
 	}
 }
 
-func SecretType(t kube.SecretType) SecretOpt {
+func SecretType(t kube.SecretType) SecretOp {
 	return func(s *kube.Secret) {
 		s.Type = t
 	}
 }
 
-func SecretMetaLabels(labels map[string]string) SecretOpt {
+func SecretMetaLabels(labels map[string]string) SecretOp {
 	return func(s *kube.Secret) {
 		if s.ObjectMeta.Labels == nil {
 			s.ObjectMeta.Labels = map[string]string{}

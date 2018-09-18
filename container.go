@@ -7,21 +7,21 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-type ContainerOpt func(pod *kube.PodSpec, container *kube.Container)
+type ContainerOp func(pod *kube.PodSpec, container *kube.Container)
 
-func Command(command ...string) ContainerOpt {
+func Command(command ...string) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.Command = command
 	}
 }
 
-func Args(args ...string) ContainerOpt {
+func Args(args ...string) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.Args = args
 	}
 }
 
-func Env(vars map[string]string, addIfNotExist bool) ContainerOpt {
+func Env(vars map[string]string, addIfNotExist bool) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		for name, value := range vars {
 			exists := false
@@ -40,7 +40,7 @@ func Env(vars map[string]string, addIfNotExist bool) ContainerOpt {
 	}
 }
 
-func EnvAllowEmpty(vars map[string]string) ContainerOpt {
+func EnvAllowEmpty(vars map[string]string) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		for name, value := range vars {
 			container.Env = append(container.Env, kube.EnvVar{Name: name, Value: value})
@@ -49,14 +49,14 @@ func EnvAllowEmpty(vars map[string]string) ContainerOpt {
 	}
 }
 
-func EnvVarFrom(name string, source *kube.EnvVarSource) ContainerOpt {
+func EnvVarFrom(name string, source *kube.EnvVarSource) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.Env = append(container.Env, kube.EnvVar{Name: name, ValueFrom: source})
 		sort.Sort(byName(container.Env))
 	}
 }
 
-func EnvVarFromSecret(varName string, secretName string, secretKey string, optional bool) ContainerOpt {
+func EnvVarFromSecret(varName string, secretName string, secretKey string, optional bool) ContainerOp {
 	return EnvVarFrom(varName, &kube.EnvVarSource{
 		SecretKeyRef: &kube.SecretKeySelector{
 			LocalObjectReference: kube.LocalObjectReference{Name: secretName},
@@ -66,7 +66,7 @@ func EnvVarFromSecret(varName string, secretName string, secretKey string, optio
 	})
 }
 
-func EnvVarFromFieldSelector(name string, fieldPath string) ContainerOpt {
+func EnvVarFromFieldSelector(name string, fieldPath string) ContainerOp {
 	return EnvVarFrom(name, &kube.EnvVarSource{
 		FieldRef: &kube.ObjectFieldSelector{FieldPath: fieldPath},
 	})
@@ -78,7 +78,7 @@ func (a byName) Len() int           { return len(a) }
 func (a byName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
-func ResourceRequests(cpu, memory string) ContainerOpt {
+func ResourceRequests(cpu, memory string) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.Resources.Requests = kube.ResourceList{
 			kube.ResourceCPU:    resource.MustParse(cpu),
@@ -87,7 +87,7 @@ func ResourceRequests(cpu, memory string) ContainerOpt {
 	}
 }
 
-func ResourceLimits(cpu, memory string) ContainerOpt {
+func ResourceLimits(cpu, memory string) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.Resources.Limits = kube.ResourceList{
 			kube.ResourceCPU:    resource.MustParse(cpu),
@@ -96,7 +96,7 @@ func ResourceLimits(cpu, memory string) ContainerOpt {
 	}
 }
 
-func ContainerPort(name string, port int32) ContainerOpt {
+func ContainerPort(name string, port int32) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.Ports = append(container.Ports, kube.ContainerPort{
 			Name:          name,
@@ -105,7 +105,7 @@ func ContainerPort(name string, port int32) ContainerOpt {
 	}
 }
 
-func VolumeMount(name string, mountPath string, opts ...VolumeMountOpt) ContainerOpt {
+func VolumeMount(name string, mountPath string, opts ...VolumeMountOp) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		var mount *kube.VolumeMount
 		for i := range container.VolumeMounts {
@@ -128,21 +128,21 @@ func VolumeMount(name string, mountPath string, opts ...VolumeMountOpt) Containe
 	}
 }
 
-type VolumeMountOpt func(mount *kube.VolumeMount)
+type VolumeMountOp func(mount *kube.VolumeMount)
 
-func ReadOnly() VolumeMountOpt {
+func ReadOnly() VolumeMountOp {
 	return func(mount *kube.VolumeMount) {
 		mount.ReadOnly = true
 	}
 }
 
-func ReadinessProbe(p *kube.Probe) ContainerOpt {
+func ReadinessProbe(p *kube.Probe) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.ReadinessProbe = p
 	}
 }
 
-func LivenessProbe(p *kube.Probe) ContainerOpt {
+func LivenessProbe(p *kube.Probe) ContainerOp {
 	return func(pod *kube.PodSpec, container *kube.Container) {
 		container.LivenessProbe = p
 	}

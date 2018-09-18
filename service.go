@@ -8,11 +8,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func Service(name string, opts ...ServiceOpt) *kube.Service {
+func Service(name string, opts ...ServiceOp) *kube.Service {
 	return ServiceForApp(name, name, opts...)
 }
 
-func ServiceForApp(name string, app string, opts ...ServiceOpt) *kube.Service {
+func ServiceForApp(name string, app string, opts ...ServiceOp) *kube.Service {
 	svc := &kube.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -36,9 +36,9 @@ func ServiceForApp(name string, app string, opts ...ServiceOpt) *kube.Service {
 	return svc
 }
 
-type ServiceOpt func(*kube.Service)
+type ServiceOp func(*kube.Service)
 
-func ServicePort(name string, port int32) ServiceOpt {
+func ServicePort(name string, port int32) ServiceOp {
 	return func(svc *kube.Service) {
 		svc.Spec.Ports = append(svc.Spec.Ports, kube.ServicePort{
 			Name:       name,
@@ -48,7 +48,7 @@ func ServicePort(name string, port int32) ServiceOpt {
 	}
 }
 
-func NodePort(name string, port int32) ServiceOpt {
+func NodePort(name string, port int32) ServiceOp {
 	return func(svc *kube.Service) {
 		svc.Spec.Type = kube.ServiceTypeNodePort
 		svc.Spec.Ports = append(svc.Spec.Ports, kube.ServicePort{
@@ -60,14 +60,14 @@ func NodePort(name string, port int32) ServiceOpt {
 	}
 }
 
-func MetricsPort(port int32) ServiceOpt {
+func MetricsPort(port int32) ServiceOp {
 	return func(svc *kube.Service) {
 		svc.ObjectMeta.Annotations["prometheus.io/scrape"] = "true"
 		svc.ObjectMeta.Annotations["prometheus.io/port"] = strconv.Itoa(int(port))
 	}
 }
 
-func MetricsPortWithPath(port int32, path string) ServiceOpt {
+func MetricsPortWithPath(port int32, path string) ServiceOp {
 	return func(svc *kube.Service) {
 		svc.ObjectMeta.Annotations["prometheus.io/scrape"] = "true"
 		svc.ObjectMeta.Annotations["prometheus.io/path"] = path
@@ -75,14 +75,14 @@ func MetricsPortWithPath(port int32, path string) ServiceOpt {
 	}
 }
 
-func PublicIP(ip string) ServiceOpt {
+func PublicIP(ip string) ServiceOp {
 	return func(svc *kube.Service) {
 		svc.Spec.Type = kube.ServiceTypeLoadBalancer
 		svc.Spec.LoadBalancerIP = ip
 	}
 }
 
-func Headless() ServiceOpt {
+func Headless() ServiceOp {
 	return func(svc *kube.Service) {
 		svc.Spec.ClusterIP = "None"
 		svc.Spec.Ports = append(svc.Spec.Ports, kube.ServicePort{
@@ -93,7 +93,7 @@ func Headless() ServiceOpt {
 	}
 }
 
-func Selector(labels map[string]string) ServiceOpt {
+func Selector(labels map[string]string) ServiceOp {
 	return func(svc *kube.Service) {
 		svc.ObjectMeta.Labels = labels
 		svc.Spec.Selector = labels

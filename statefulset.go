@@ -4,17 +4,17 @@ import (
 	kubeext "k8s.io/api/apps/v1"
 )
 
-type StatefulSetOpt func(sset *kubeext.StatefulSet)
+type StatefulSetOp func(sset *kubeext.StatefulSet)
 
-func StatefulSetReplicas(count int32) StatefulSetOpt {
+func StatefulSetReplicas(count int32) StatefulSetOp {
 	return func(sset *kubeext.StatefulSet) {
 		sset.Spec.Replicas = IntPtr(count)
 	}
 }
 
-func StatefulSetPod(podOpts ...PodSpecOpt) StatefulSetOpt {
+func StatefulSetPod(podOps ...PodSpecOp) StatefulSetOp {
 	return func(sset *kubeext.StatefulSet) {
-		for _, opt := range podOpts {
+		for _, opt := range podOps {
 			opt(&sset.Spec.Template.Spec)
 		}
 	}
