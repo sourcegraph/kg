@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 	"k8s.io/api/apps/v1"
@@ -68,6 +69,15 @@ type Cluster struct {
 }
 
 func (c *Cluster) Write() error {
+	for file, _ := range c.files {
+		if strings.HasPrefix(file, strings.TrimSuffix(c.newFilesDir, string(filepath.Separator))+string(filepath.Separator)) {
+			if err := os.MkdirAll(c.newFilesDir, 0777); err != nil {
+				return err
+			}
+			break
+		}
+	}
+
 	for file, obj := range c.files {
 		e := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
 
