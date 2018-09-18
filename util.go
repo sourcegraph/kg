@@ -3,7 +3,10 @@ package kg
 import (
 	"io/ioutil"
 	"log"
+	"os"
 	"reflect"
+
+	yaml "gopkg.in/yaml.v2"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -36,8 +39,16 @@ func ReadString(filename string) string {
 	return string(b)
 }
 
-func ReadYAML(filename string) map[string]interface{} {
-
+func ReadYAML(filename string) (v map[string]interface{}) {
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("Could not open file %s: %v", filename, err)
+	}
+	defer f.Close()
+	if err := yaml.NewDecoder(f).Decode(&v); err != nil {
+		log.Fatalf("Could not unmarshal YAML from file %s: %v", filename, err)
+	}
+	return v
 }
 
 // Merge merges the from map into into
