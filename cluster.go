@@ -3,14 +3,12 @@ package kg
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/apps/v1"
 	kube "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -46,7 +44,7 @@ func ModifyCluster(rootDir, newFilesDir string, apply func(*Cluster)) error {
 func NewCluster(files []string, newFilesDir string) (*Cluster, error) {
 	c := &Cluster{files: make(map[string]runtime.Object), newFilesDir: newFilesDir}
 	for _, file := range files {
-		b, err := ioutil.ReadFile(file)
+		b, err := os.ReadFile(file)
 		if err != nil {
 			return nil, err
 		}
@@ -99,7 +97,7 @@ func (c *Cluster) Write() error {
 			return err
 		}
 
-		if err := ioutil.WriteFile(file, sanitized, 0666); err != nil {
+		if err := os.WriteFile(file, sanitized, 0666); err != nil {
 			return err
 		}
 	}

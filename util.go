@@ -3,7 +3,6 @@ package kg
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -34,7 +33,7 @@ func IntstrPtr(v intstr.IntOrString) *intstr.IntOrString {
 }
 
 func ReadString(filename string) string {
-	b, err := ioutil.ReadFile(filename)
+	b, err := os.ReadFile(filename)
 	if err != nil {
 		log.Fatalf("Could not read file %s: %v", filename, err)
 	}
